@@ -35,9 +35,8 @@ USER appuser
 # HF Spaces requires port 7860
 EXPOSE 7860
 
-# Default command: serve FastAPI REST API on port 7860
-# Evaluator requires POST /reset and POST /step via REST API
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Run Gradio demo for interactive UI
+CMD ["python", "gradio_app.py"]
 
 # ── Instructions ─────────────────────────────────────────────────────────────
 # REST API endpoints (once running):
