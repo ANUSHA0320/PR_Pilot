@@ -1,79 +1,59 @@
 ---
-title: PR Pilot
-emoji: 🚀
-colorFrom: blue
-colorTo: purple
+title: CodeReviewEnv-v0
 sdk: docker
 pinned: false
 license: mit
-short_description: Multi-Agent AI Code Review with RL Training
+short_description: AI code review reinforcement learning environment
 tags:
   - reinforcement-learning
   - code-review
-  - multi-agent
-  - trl
-  - ppo
+  - gymnasium
+  - benchmark
 ---
 
-# PR Pilot · Multi-Agent Code Review Environment
+# CodeReviewEnv-v0
 
-[![Tests](https://github.com/ANUSHA0320/CodeReviewEnv/actions/workflows/tests.yml/badge.svg)](https://github.com/ANUSHA0320/CodeReviewEnv/actions/workflows/tests.yml)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Gymnasium](https://img.shields.io/badge/gymnasium-1.x-green.svg)](https://gymnasium.farama.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ANUSHA0320/CodeReviewEnv/blob/main/training_trl_colab.ipynb)
-
-> **OpenEnv Hackathon 2026 Submission**: Multi-Agent Collaboration + Self-Improving Systems
-
-**PR Pilot** is a Gymnasium-compatible RL environment where AI agents learn to review code through multi-agent collaboration. Three specialist agents (Bug, Security, Performance) analyze PRs, debate findings, and train a lead reviewer to make optimal decisions.
+Gymnasium-compatible reinforcement learning environment for automated pull-request code review.
 
 ---
 
-## 🎯 Key Features
+## Overview
 
-### Multi-Agent Architecture
-- **BugAgent**: Detects syntax errors, unused variables, type issues
-- **SecurityAgent**: Identifies hardcoded secrets, SQL injection risks
-- **PerformanceAgent**: Spots inefficient algorithms, memory leaks
-- **LeadReviewer**: Synthesizes findings and makes final decision
+CodeReviewEnv-v0 simulates the workflow of a GitHub pull-request review.
+Each episode presents the agent with a real-looking PR diff and metadata.
+The agent must decide how to respond — approve, reject, comment on a bug,
+suggest a patch, or request changes — and is scored on accuracy and quality.
 
-### Collaborative Workflow
-1. Each specialist agent analyzes the PR independently
-2. Agents debate their findings (structured discussion)
-3. Consensus reached through weighted voting
-4. LeadReviewer trained via PPO to optimize decisions
-
-### Self-Improving System
-- **Adaptive Curriculum**: Difficulty scales based on performance (easy → medium → hard)
-- **Reviewer-Author Dialogue**: Iterative negotiation loop for PR improvements
-- **Reward Shaping**: Multi-objective optimization (correctness, false positives, review quality)
+Multi-agent review is supported: BugAgent, SecurityAgent, and PerformanceAgent
+analyze the PR, debate, and provide a summary before the LeadReviewer agent
+makes a final decision.
 
 ---
 
-## 📂 Project Structure
+## Project structure
 
 ```
-PR-Pilot/
-├── code_review_env/         ← Core Gymnasium environment
-│   ├── env.py               ← Multi-agent orchestration & PPO integration
-│   ├── state.py             ← Agent reports, debate, dialogue tracking
-│   ├── actions.py           ← Review actions (approve/reject/comment)
-│   └── reward.py            ← Shaped reward with negotiation bonuses
-├── tasks/                   ← Difficulty-specific evaluation logic
-├── graders/                 ← Task graders for scoring
-├── data/                    ← 24 GitHub PRs (8 easy, 8 medium, 8 hard)
-├── baseline/                ← Heuristic + LLM baselines
-├── app/                     ← FastAPI REST API
-├── gradio_app.py            ← Interactive demo UI
-├── training_trl_colab.ipynb ← TRL PPO training notebook
-├── results/                 ← Training evidence (plots, metrics)
-├── tests/                   ← 74 pytest tests
-└── openenv.yaml             ← OpenEnv manifest
+CodeReviewEnv/
+├── code_review_env/      ← Gymnasium environment (env.py, state.py, actions.py, reward.py)
+├── tasks/                ← Evaluation logic (easy / medium / hard)
+├── graders/              ← Deterministic graders (wrap tasks)
+├── data/                 ← PR datasets (JSON)  easy / medium / hard
+├── baseline/             ← run_agent.py  (heuristic + LLM agents)
+├── app/                  ← FastAPI REST API (main.py)
+├── tests/                ← 74 pytest unit + integration tests
+├── configs/              ← gym.yaml  metadata
+├── .github/workflows/    ← CI: tests on Python 3.10 / 3.11 / 3.12
+├── gradio_app.py         ← Interactive Gradio web UI
+├── pyproject.toml        ← Modern PEP 621 package definition
+├── setup.py              ← Legacy editable install shim
+├── Dockerfile
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install
 
@@ -81,35 +61,31 @@ PR-Pilot/
 git clone https://github.com/ANUSHA0320/CodeReviewEnv
 cd CodeReviewEnv
 pip install -r requirements.txt
-pip install -e .  # editable install
+# or editable install:
+pip install -e .
 ```
 
-### 2. Try the Demo (Gradio UI)
+### 2. Launch the Gradio UI
 
 ```bash
 python gradio_app.py
 # Open: http://localhost:7860
 ```
 
-**Features**:
-- Load GitHub PRs directly from URLs
-- View multi-agent analysis (Bug/Security/Performance)
-- See debate summary and recommendations
-- Test different review scenarios
+### 3. Run heuristic baseline (no API key)
 
-### 3. Train an Agent (Google Colab)
+```bash
+python baseline/run_agent.py --no-llm --episodes 5
+```
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ANUSHA0320/CodeReviewEnv/blob/main/training_trl_colab.ipynb)
+### 4. Run LLM baseline
 
-**Steps**:
-1. Click button above (opens notebook in Colab)
-2. Runtime → Change runtime type → T4 GPU
-3. Runtime → Run all (~15 minutes)
-4. Download training plots from `results/` folder
+```bash
+export OPENAI_API_KEY=sk-...
+python baseline/run_agent.py --episodes 5 --seed 42
+```
 
-See [COLAB_INSTRUCTIONS.md](COLAB_INSTRUCTIONS.md) for details.
-
-### 4. Use the Environment Directly
+### 5. Use the environment directly
 
 ```python
 import gymnasium as gym
@@ -141,30 +117,7 @@ env.close()
 
 ---
 
-## 📖 Storytelling & Presentation
-
-**OpenEnv Hackathon 2026 Submission**
-
-Choose your format:
-
-### 📝 Blog Post
-📄 **[Read the full story on GitHub](https://github.com/ANUSHA0320/PR_Pilot/blob/main/HACKATHON_BLOG.md)**
-
-### 📊 Slide Deck
-📑 **[View slides on Google Slides](https://docs.google.com/presentation/d/1t8M1xrouFHtkEMYPHxooE1_zQ9b-NjjvNnqe77Wiilg/edit?usp=sharing)**
-
-*Additional materials*: [Video script](HACKATHON_VIDEO_SCRIPT.md) | [Slide markdown](HACKATHON_SLIDES.md)
-
-**What's covered:**
-- Problem: Why code review is hard for single-agent AI
-- Solution: Multi-agent collaboration with debate simulation
-- Results: Training curves showing 156% improvement (0.0 → 0.36 final avg)
-- Demo: Live HuggingFace Space + Colab training notebook
-- Impact: First RL environment for multi-agent code review
-
----
-
-## Observation Space
+## Observation space
 
 ```python
 spaces.Dict({
@@ -187,7 +140,7 @@ spaces.Dict({
 
 ---
 
-## Action Space
+## Action space
 
 ```python
 spaces.Discrete(5)
@@ -195,15 +148,15 @@ spaces.Discrete(5)
 
 | Action | Label | Terminal? | When to use |
 |:------:|-------|:---------:|-------------|
-| 0 | `approve` | ✅ Yes | PR looks clean — no issues found |
-| 1 | `reject` | ✅ Yes | PR has a critical bug that blocks merge |
+| 0 | `approve` | Yes | PR looks clean |
+| 1 | `reject` | Yes | PR has a critical bug |
 | 2 | `request_changes` | No | Issues found but fixable — ask for revision |
 | 3 | `comment_bug` | No | Annotate a specific bug in the diff |
 | 4 | `suggest_patch` | No | Propose an improved version of the code |
 
 ---
 
-## Reward Shaping
+## Reward shaping
 
 | Event | Reward |
 |-------|-------:|
@@ -220,7 +173,7 @@ AuthorAgent feedback during request-changes negotiation.
 
 ---
 
-## Multi-Agent Flow
+## Multi-agent flow
 
 1. PR arrives
 2. BugAgent analyzes
@@ -234,7 +187,7 @@ training scripts can learn from negotiation dynamics.
 
 ---
 
-## Adaptive Curriculum
+## Adaptive curriculum
 
 Use `difficulty="adaptive"` to enable self-improving difficulty sampling.
 The environment promotes from easy → medium → hard as recent scores improve.
@@ -285,74 +238,19 @@ docker run code-review-env \
 
 ## Gradio UI
 
-The interactive Gradio app (`gradio_app.py`) ships with three tabs:
+The interactive Gradio app (`gradio_app.py`) provides three tabs:
 
 | Tab | Description |
 |-----|-------------|
-| **▶ Play** | Load a PR, choose an action via buttons, see live reward + score feedback |
-| **🏆 Leaderboard** | Table of all completed episodes with per-difficulty averages |
-| **ℹ️ About** | Full API reference, observation/action space docs, quick-start guide |
+| Play | Load a PR, choose an action, and see live reward feedback |
+| Leaderboard | Table of completed episodes with per-difficulty averages |
+| About | API reference, observation space, action space, and quick start |
 
-The **Auto Demo** button runs a full heuristic episode automatically so evaluators can see a complete trajectory without manual input.
-
----
-
-## 📊 Training Results with TRL PPO
-
-### Setup & Configuration
-- **Algorithm**: Proximal Policy Optimization (PPO) via Hugging Face TRL
-- **Model**: distilgpt2 with value head (82M parameters)
-- **Environment**: PR Pilot (CodeReviewEnv-v0), easy difficulty  
-- **Episodes**: 30+ for demonstration, 100+ recommended for convergence
-
-### Key Metrics (Latest Colab Run):
-| Metric | Value |
-|--------|------:|
-| Average Reward | 0.140 |
-| Reward Range | [-0.300, 0.800] |
-| Final 5 Episodes Avg | 0.360 |
-| Improvement vs Baseline | **+156%** (0.0 → 0.360 final avg) |
-| Standard Deviation | 0.539 |
-| Training Time | ~15 min (T4 GPU) |
-
-**Evidence**: [Training Progress](results/TrainingProgress_RewardDistribution.png) | [Baseline Comparison](results/TrainingAgent_RandomPolicy.png) | [Summary](results/training_summary.txt)
-
-### What the Agent Learns:
-1. ✅ **Bug Detection**: Syntax errors, unused variables, type mismatches
-2. ✅ **Security Analysis**: Hardcoded secrets, SQL injection patterns
-3. ✅ **Review Strategy**: Optimal balance of approve/reject/request changes
-4. ✅ **Multi-Agent Synthesis**: Integrate Bug/Security/Performance findings
-
-### Training Resources:
-- 📓 **Notebook**: [training_trl_colab.ipynb](training_trl_colab.ipynb)
-- 📊 **Results**: [results/](results/) folder (plots + metrics)
-- 📖 **Guide**: [COLAB_INSTRUCTIONS.md](COLAB_INSTRUCTIONS.md)
-
-> **Note**: For full TRL training, run notebook on Google Colab (free T4 GPU). Local runs use demo mode as fallback due to SSL restrictions.
+The Auto Demo button runs a full heuristic episode automatically.
 
 ---
 
-## 🏆 OpenEnv Hackathon 2026 Alignment
-
-### Theme: Multi-Agent Collaboration ✅
-- **Specialist Agents**: BugAgent, SecurityAgent, PerformanceAgent analyze independently
-- **Debate Mechanism**: Structured discussion reaches consensus
-- **Synthesis**: LeadReviewer integrates findings via weighted voting
-
-### Theme: Self-Improving Systems ✅  
-- **Adaptive Curriculum**: Auto-adjusts difficulty (easy → medium → hard)
-- **Dialogue Loop**: Reviewer-Author negotiation refines PRs iteratively
-- **Reward Shaping**: Multi-objective optimization drives exploration
-
-### Innovation Highlights:
-- 🥇 **First multi-agent** RL environment for code review with debate
-- 🌍 **Real-world data**: 24 GitHub PRs (Python/JavaScript/Java)
-- 🤖 **LLM-ready**: Rich textual observations for transformer policies
-- 🚀 **Production-grade**: FastAPI + Gradio UI + 74 tests + CI/CD
-
----
-
-## Measured Baseline Scores
+## Baseline scores
 
 Scores measured over 8 episodes (full dataset) with `--seed 42`:
 
@@ -365,31 +263,33 @@ Scores measured over 8 episodes (full dataset) with `--seed 42`:
 
 ---
 
-## 🔧 API & Integration
+## Training results
+
+Latest Colab run:
+
+- 100 episodes
+- average reward: 0.052
+- final 5 episodes average reward: 0.360
+- reward range: [-0.300, 0.800]
+
+Artifacts:
+
+- [Training progress](results/TrainingProgress_RewardDistribution.png)
+- [Baseline comparison](results/TrainingAgent_RandomPolicy.png)
+- [Training summary](results/training_summary.txt)
+
+---
+
+## Continuous integration
 
 The repository ships with a GitHub Actions workflow (`.github/workflows/tests.yml`) that runs on every push and pull request:
 
 - **Matrix:** Python 3.10, 3.11, 3.12 on `ubuntu-latest`
 - **Steps:** install deps → `pytest` with coverage → `check_env` on all difficulties → heuristic baseline smoke test
-🔧 API & Integration
 
-### FastAPI REST Server
-
-Start the server:
-```bash
-uvicorn app.main:app --reload
-# Open: http://localhost:8000/docs
-```
-
-**Endpoints**:
-- `POST /reset` - Start new episode, returns observation
-- `POST /step` - Submit action, returns reward + done flag
-- `POST /render` - Get current state visualization
-
-### 
 ---
 
-## Gymnasium Compliance
+## Gymnasium compliance
 
 The environment passes `gymnasium.utils.env_checker.check_env` on all three difficulties:
 
@@ -407,54 +307,24 @@ for difficulty in ("easy", "medium", "hard"):
 
 ---
 
-## 🚀 Deployment
+## Hugging Face Spaces deployment
 
-### Hugging Face Spaces
-
-This repo is configured for [Hugging Face Spaces](https://huggingface.co/spaces/anu1720/PR_Pilot):
+This repo is configured for [Hugging Face Spaces](https://huggingface.co/spaces/anu1720/PR_Pilot) with `sdk: docker`.
+The Dockerfile builds and serves the Gradio UI on port 7860.
 
 ```
-🌐 Live Demo: https://huggingface.co/spaces/anu1720/PR_Pilot
+https://huggingface.co/spaces/anu1720/code-review-gym
 ```
 
-**Docker SDK** deployment (automatically builds and serves on port 7860):
+To deploy your own fork:
 
 ```bash
-git remote add hf https://huggingface.co/spaces/<your-user>/pr-pilot
+git remote add hf https://huggingface.co/spaces/<your-user>/<your-space>
 git push hf main
 ```
 
-### Local Docker
-
-```bash
-docker build -t pr-pilot .
-docker run -p 7860:7860 pr-pilot  # Gradio UI
-```
-
 ---
 
-## 📚 Documentation
+## License
 
-- 📓 **Training Guide**: [COLAB_INSTRUCTIONS.md](COLAB_INSTRUCTIONS.md)
-- ⚡ **Quick Start**: [QUICK_START_COLAB.md](QUICK_START_COLAB.md)  
-- 📊 **Results**: [results/README.md](results/README.md)
-- 🔧 **OpenEnv Manifest**: [openenv.yaml](openenv.yaml)
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **OpenEnv Hackathon 2026** for the challenge themes
-- **Hugging Face TRL** for PPO training framework
-- **Gymnasium** for RL environment standardization
-- **GitHub** for real PR data inspiration
-
----
-
-**Built with ❤️ for the OpenEnv Hackathon 2026**
+MIT

@@ -1,7 +1,7 @@
 TRAINING SUMMARY
 ============================================================
-Episodes: 30
-Average Reward: 0.140
-Std Dev: 0.539
+Episodes: 100
+Average Reward: 0.052
+Std Dev: 0.513
 Range: [-0.300, 0.800]
 Final 5 episodes avg: 0.360

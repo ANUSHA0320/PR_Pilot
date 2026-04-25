@@ -103,6 +103,10 @@ class HeuristicAgent:
         "password", "secret", "api_key", "apikey", "token", "hardcoded",
         "drop table", "delete from", "exec(", "eval(",
         "except:", "pass", "range(len(",
+        "off_by_one_logical_bug", "assignment_in_condition", "infinite_loop",
+        "mutable_default_argument", "string_format_error", "sql_injection",
+        "null_pointer_dereference", "debug_print_left_in", "non_pythonic_loop",
+        "missing_context_manager", "use_pathlib_over_os_path",
     ]
 
     def __init__(self) -> None:
@@ -116,13 +120,20 @@ class HeuristicAgent:
         diff    = observation.get("diff_patch", "").lower()
         lint    = observation["lint_report"].get("unused_variable", 0)
         tests   = observation["test_results"].get("tests_passed", 1)
-        has_issue = lint or not tests or any(kw in diff for kw in self._RISK_KEYWORDS)
+        report_text = " ".join(
+            [
+                str(observation.get("debate_summary", "")),
+                str(observation.get("author_reply", "")),
+                " ".join(str(v) for v in observation.get("agent_reports", {}).values()),
+            ]
+        ).lower()
+        has_issue = lint or not tests or any(kw in diff or kw in report_text for kw in self._RISK_KEYWORDS)
 
         if has_issue:
             if self._step == 1:
                 return Action.COMMENT_BUG
             if self._step == 2:
-                return Action.SUGGEST_PATCH
+                return Action.REQUEST_CHANGES
             return Action.REJECT
         return Action.APPROVE
 

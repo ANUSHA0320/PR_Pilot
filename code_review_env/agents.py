@@ -9,10 +9,127 @@ then participates in a debate mechanism to reach consensus.
 
 from __future__ import annotations
 
+import json
+import os
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
+
+
+def _llm_backend_preference() -> str:
+    """Return the preferred agent backend: 'llm', 'heuristic', or 'hybrid'."""
+    return os.getenv("PR_PILOT_AGENT_BACKEND", "hybrid").strip().lower()
+
+
+def _llm_available() -> bool:
+    return bool(os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY"))
+
+
+def _strip_code_fences(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```$", "", text)
+    return text.strip()
+
+
+def _safe_json_loads(text: str) -> Optional[object]:
+    try:
+        return json.loads(_strip_code_fences(text))
+    except Exception:
+        return None
+
+
+class LLMClient:
+    """Thin wrapper around OpenAI / Anthropic for agent analysis."""
+
+    def __init__(self) -> None:
+        self.provider = None
+        self.model = None
+        self._client = None
+
+        if os.getenv("OPENAI_API_KEY"):
+            try:
+                from openai import OpenAI
+
+                self._client = OpenAI()
+                self.provider = "openai"
+                self.model = os.getenv("PR_PILOT_OPENAI_MODEL", "gpt-4o-mini")
+            except Exception:
+                self._client = None
+
+        if self._client is None and os.getenv("ANTHROPIC_API_KEY"):
+            try:
+                from anthropic import Anthropic
+
+                self._client = Anthropic()
+                self.provider = "anthropic"
+                self.model = os.getenv("PR_PILOT_ANTHROPIC_MODEL", "claude-3-5-sonnet-latest")
+            except Exception:
+                self._client = None
+
+    @property
+    def available(self) -> bool:
+        return self._client is not None and self.provider is not None and self.model is not None
+
+    def analyze(self, system_prompt: str, user_prompt: str) -> str:
+        if not self.available:
+            raise RuntimeError("No LLM backend is configured.")
+
+        if self.provider == "openai":
+            response = self._client.chat.completions.create(
+                model=self.model,
+                temperature=0,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            return response.choices[0].message.content or "{}"
+
+        if self.provider == "anthropic":
+            response = self._client.messages.create(
+                model=self.model,
+                temperature=0,
+                max_tokens=1024,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_prompt}],
+            )
+            return "".join(block.text for block in response.content if hasattr(block, "text"))
+
+        raise RuntimeError(f"Unsupported provider: {self.provider}")
+
+
+def _findings_from_llm_text(text: str) -> List["Finding"]:
+    data = _safe_json_loads(text)
+    findings: List[Finding] = []
+
+    if isinstance(data, dict):
+        items = data.get("findings", data.get("issues", []))
+    elif isinstance(data, list):
+        items = data
+    else:
+        items = []
+
+    if not isinstance(items, list):
+        return findings
+
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        findings.append(
+            Finding(
+                issue_type=str(item.get("issue_type", item.get("type", "llm_finding"))),
+                severity=str(item.get("severity", "medium")).lower(),
+                description=str(item.get("description", item.get("message", "LLM-detected issue"))),
+                confidence=float(item.get("confidence", 0.75)),
+                line_number=int(item.get("line_number", 0) or 0),
+            )
+        )
+
+    return findings
 
 
 @dataclass
@@ -117,7 +234,7 @@ class BugAgent(Agent):
             ))
         
         # 5. Unused variables
-        if 'unused' in diff_lower or re.search(r'\w+\s*=\s*[^=].*\n(?!.*\1)', diff):
+        if 'unused' in diff_lower or 'unused_' in diff_lower or '# unused' in diff_lower:
             findings.append(Finding(
                 issue_type="unused_variable",
                 severity="low",
@@ -353,6 +470,97 @@ class PerformanceAgent(Agent):
         return findings
 
 
+class LLMBugAgent(BugAgent):
+    """BugAgent powered by an LLM when available."""
+
+    SYSTEM_PROMPT = (
+        "You are BugAgent, a specialized code-review assistant. "
+        "Inspect the provided diff for syntax errors, logical bugs, runtime issues, "
+        "test failures, and debugging leftovers. Return JSON only."
+    )
+
+    def analyze(self, diff: str, context: dict) -> List[Finding]:
+        if _llm_backend_preference() in ("llm", "hybrid") and _llm_available():
+            try:
+                client = LLMClient()
+                prompt = (
+                    "Diff:\n"
+                    f"{diff}\n\n"
+                    "Context:\n"
+                    f"{json.dumps(context, ensure_ascii=False)}\n\n"
+                    "Return JSON with a top-level key 'findings' containing a list of objects. "
+                    "Each object must include: issue_type, severity, description, confidence, line_number. "
+                    "Only report findings you are reasonably confident about."
+                )
+                text = client.analyze(self.SYSTEM_PROMPT, prompt)
+                findings = _findings_from_llm_text(text)
+                if findings:
+                    return findings
+            except Exception:
+                pass
+        return super().analyze(diff, context)
+
+
+class LLMSecurityAgent(SecurityAgent):
+    """SecurityAgent powered by an LLM when available."""
+
+    SYSTEM_PROMPT = (
+        "You are SecurityAgent, a specialized code-review assistant. "
+        "Inspect the provided diff for hardcoded secrets, SQL injection, command injection, unsafe deserialization, "
+        "eval/exec usage, and weak cryptography. Return JSON only."
+    )
+
+    def analyze(self, diff: str, context: dict) -> List[Finding]:
+        if _llm_backend_preference() in ("llm", "hybrid") and _llm_available():
+            try:
+                client = LLMClient()
+                prompt = (
+                    "Diff:\n"
+                    f"{diff}\n\n"
+                    "Context:\n"
+                    f"{json.dumps(context, ensure_ascii=False)}\n\n"
+                    "Return JSON with a top-level key 'findings' containing a list of objects. "
+                    "Each object must include: issue_type, severity, description, confidence, line_number."
+                )
+                text = client.analyze(self.SYSTEM_PROMPT, prompt)
+                findings = _findings_from_llm_text(text)
+                if findings:
+                    return findings
+            except Exception:
+                pass
+        return super().analyze(diff, context)
+
+
+class LLMPerformanceAgent(PerformanceAgent):
+    """PerformanceAgent powered by an LLM when available."""
+
+    SYSTEM_PROMPT = (
+        "You are PerformanceAgent, a specialized code-review assistant. "
+        "Inspect the provided diff for inefficient loops, missing context managers, nested loops, global variables, "
+        "os.path usage, dictionary inefficiencies, and non-idiomatic Python. Return JSON only."
+    )
+
+    def analyze(self, diff: str, context: dict) -> List[Finding]:
+        if _llm_backend_preference() in ("llm", "hybrid") and _llm_available():
+            try:
+                client = LLMClient()
+                prompt = (
+                    "Diff:\n"
+                    f"{diff}\n\n"
+                    "Context:\n"
+                    f"{json.dumps(context, ensure_ascii=False)}\n\n"
+                    "Return JSON with a top-level key 'findings' containing a list of objects. "
+                    "Each object must include: issue_type, severity, description, confidence, line_number."
+                )
+                text = client.analyze(self.SYSTEM_PROMPT, prompt)
+                findings = _findings_from_llm_text(text)
+                if findings:
+                    return findings
+            except Exception:
+                pass
+        return super().analyze(diff, context)
+
+
 class DebateMechanism:
     """Coordinates agent findings and builds consensus."""
     
@@ -420,10 +628,13 @@ def run_multi_agent_analysis(pr: dict) -> Tuple[Dict[str, str], str, float]:
         'file_type': pr.get('file_type', ''),
     }
     
-    # Run agents in parallel (simulated)
-    bug_agent = BugAgent()
-    security_agent = SecurityAgent()
-    performance_agent = PerformanceAgent()
+    backend = _llm_backend_preference()
+    use_llm = backend in ("llm", "hybrid") and _llm_available()
+
+    # Run agents in parallel (LLM-backed when available, heuristic fallback otherwise)
+    bug_agent = LLMBugAgent() if use_llm else BugAgent()
+    security_agent = LLMSecurityAgent() if use_llm else SecurityAgent()
+    performance_agent = LLMPerformanceAgent() if use_llm else PerformanceAgent()
     
     bug_findings = bug_agent.analyze(diff, context)
     security_findings = security_agent.analyze(diff, context)
@@ -440,5 +651,8 @@ def run_multi_agent_analysis(pr: dict) -> Tuple[Dict[str, str], str, float]:
     debate_summary, severity_score = DebateMechanism.debate(
         bug_findings, security_findings, performance_findings
     )
+
+    if use_llm:
+        debate_summary = "LLM-backed agents reviewed the PR. " + debate_summary
     
     return reports, debate_summary, severity_score
