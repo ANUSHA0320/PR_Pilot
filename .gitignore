@@ -1,9 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.pyc
+.cache/
 *.egg
 *.egg-info/
 dist/
@@ -70,4 +68,3 @@ tensorboard_logs/
 # OS
 Desktop.ini
 ehthumbs.db
-.cache/
