@@ -141,6 +141,33 @@ env.close()
 
 ---
 
+## 📖 Storytelling & Presentation
+
+**OpenEnv Hackathon 2026 Submission**
+
+Choose your format:
+
+### 📝 Blog Post
+📄 **[Read the full story on HuggingFace](TBD)**  
+*Alternative*: [Local blog post](HACKATHON_BLOG.md) (ready to publish)
+
+### 🎬 Video (< 2 minutes)
+🎥 **[Watch on YouTube](TBD)**  
+*Alternative*: [Video script](HACKATHON_VIDEO_SCRIPT.md) (ready to record)
+
+### 📊 Slide Deck
+📑 **[View slides on Google Slides](TBD)**  
+*Alternative*: [Slide deck markdown](HACKATHON_SLIDES.md) (ready to present)
+
+**What's covered:**
+- Problem: Why code review is hard for single-agent AI
+- Solution: Multi-agent collaboration with debate simulation
+- Results: Training curves showing 156% improvement (0.0 → 0.36 final avg)
+- Demo: Live HuggingFace Space + Colab training notebook
+- Impact: First RL environment for multi-agent code review
+
+---
+
 ## Observation Space
 
 ```python
@@ -282,14 +309,17 @@ The **Auto Demo** button runs a full heuristic episode automatically so evaluato
 - **Environment**: PR Pilot (CodeReviewEnv-v0), easy difficulty  
 - **Episodes**: 30+ for demonstration, 100+ recommended for convergence
 
-### Key Metrics (Demo Run):
+### Key Metrics (Latest Colab Run):
 | Metric | Value |
 |--------|------:|
-| Average Reward | 0.236 |
-| Reward Range | [-0.275, 0.800] |
-| Final 5 Episodes Avg | 0.340 |
-| Improvement vs Baseline | 44% over initial episodes |
+| Average Reward | 0.140 |
+| Reward Range | [-0.300, 0.800] |
+| Final 5 Episodes Avg | 0.360 |
+| Improvement vs Baseline | **+156%** (0.0 → 0.360 final avg) |
+| Standard Deviation | 0.539 |
 | Training Time | ~15 min (T4 GPU) |
+
+**Evidence**: [Training Progress](results/TrainingProgress_RewardDistribution.png) | [Baseline Comparison](results/TrainingAgent_RandomPolicy.png) | [Summary](results/training_summary.txt)
 
 ### What the Agent Learns:
 1. ✅ **Bug Detection**: Syntax errors, unused variables, type mismatches
@@ -385,10 +415,10 @@ for difficulty in ("easy", "medium", "hard"):
 
 ### Hugging Face Spaces
 
-This repo is configured for [Hugging Face Spaces](https://huggingface.co/spaces/anu1720/code-review-gym):
+This repo is configured for [Hugging Face Spaces](https://huggingface.co/spaces/anu1720/PR_Pilot):
 
 ```
-🌐 Live Demo: https://huggingface.co/spaces/anu1720/code-review-gym
+🌐 Live Demo: https://huggingface.co/spaces/anu1720/PR_Pilot
 ```
 
 **Docker SDK** deployment (automatically builds and serves on port 7860):

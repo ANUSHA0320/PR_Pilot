@@ -16,7 +16,7 @@ description: >
 author: "anu1720"
 license: MIT
 repository: "https://github.com/ANUSHA0320/CodeReviewEnv"
-space: "https://huggingface.co/spaces/anu1720/code-review-gym"
+space: "https://huggingface.co/spaces/anu1720/PR_Pilot"
 
 # ── REST API ─────────────────────────────────────────────────────────────────
 api:
