@@ -16,7 +16,7 @@ Follow these steps to generate actual TRL training results for your hackathon su
 ### Option B: From GitHub (if pushed)
 1. Go to https://colab.research.google.com/
 2. Click **File → Open notebook → GitHub tab**
-3. Enter your repo URL: `https://github.com/ANUSHA0320/CodeReviewEnv`
+3. Enter your repo URL: `https://github.com/ANUSHA0320/PR_Pilot`
 4. Select `training_trl_colab.ipynb`
 
 ### Option C: Add Colab Badge to README
