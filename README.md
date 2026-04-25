@@ -148,16 +148,12 @@ env.close()
 Choose your format:
 
 ### 📝 Blog Post
-📄 **[Read the full story on HuggingFace](TBD)**  
-*Alternative*: [Local blog post](HACKATHON_BLOG.md) (ready to publish)
-
-### 🎬 Video (< 2 minutes)
-🎥 **[Watch on YouTube](TBD)**  
-*Alternative*: [Video script](HACKATHON_VIDEO_SCRIPT.md) (ready to record)
+📄 **[Read the full story on GitHub](https://github.com/ANUSHA0320/PR_Pilot/blob/main/HACKATHON_BLOG.md)**
 
 ### 📊 Slide Deck
-📑 **[View slides on Google Slides](TBD)**  
-*Alternative*: [Slide deck markdown](HACKATHON_SLIDES.md) (ready to present)
+📑 **[View slides on Google Slides](https://docs.google.com/presentation/d/1t8M1xrouFHtkEMYPHxooE1_zQ9b-NjjvNnqe77Wiilg/edit?usp=sharing)**
+
+*Additional materials*: [Video script](HACKATHON_VIDEO_SCRIPT.md) | [Slide markdown](HACKATHON_SLIDES.md)
 
 **What's covered:**
 - Problem: Why code review is hard for single-agent AI

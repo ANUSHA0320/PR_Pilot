@@ -44,6 +44,7 @@ from gymnasium import spaces
 from code_review_env.actions import Action, action_label, is_terminal
 from code_review_env.reward import compute_reward
 from code_review_env.state import ReviewState
+from code_review_env.agents import run_multi_agent_analysis
 
 import string as _string
 
@@ -334,75 +335,13 @@ class CodeReviewEnv(gym.Env):
         }
 
     def _run_multi_agent(self, pr: dict) -> Tuple[Dict[str, str], str]:
-        """Simulate Bug/Security/Performance agents and build a debate summary."""
-        expected = set(pr.get("expected_issues", []))
-        diff = (pr.get("diff_patch", "") or "").lower()
-
-        bug_issues = {
-            "syntax_error",
-            "division_by_zero",
-            "null_pointer_dereference",
-            "off_by_one_logical_bug",
-            "assignment_in_condition",
-            "infinite_loop",
-            "mutable_default_argument",
-            "string_format_error",
-        }
-        security_issues = {
-            "hardcoded_password",
-            "hardcoded_secret",
-            "sql_injection",
-        }
-        perf_issues = {
-            "non_pythonic_loop",
-            "verbose_accumulation_pattern",
-            "string_concat_in_loop",
-            "manual_counter_instead_of_enumerate",
-            "use_pathlib_over_os_path",
-            "missing_context_manager",
-            "unnecessary_type_check",
-            "use_dataclass_over_dict",
-        }
-
-        bug_hits = sorted(expected & bug_issues)
-        sec_hits = sorted(expected & security_issues)
-        perf_hits = sorted(expected & perf_issues)
-
-        if not bug_hits and any(
-            k in diff
-            for k in (
-                "null",
-                "none",
-                "divide",
-                "zero",
-                "off by",
-                "while",
-                "return price - 0",
-                "return 0",
-                "discount",
-            )
-        ):
-            bug_hits = ["logic_risk"]
-        if not sec_hits and any(k in diff for k in ("password", "secret", "api_key", "token", "select *")):
-            sec_hits = ["security_risk"]
-        if not perf_hits and any(k in diff for k in ("for i in range", "append(", "join", "os.path.join")):
-            perf_hits = ["performance_risk"]
-
-        def _fmt(hits: list[str]) -> str:
-            if not hits:
-                return "No issues detected."
-            return f"Potential issues: {', '.join(hits)}."
-
-        reports = {
-            "bug": _fmt(bug_hits),
-            "security": _fmt(sec_hits),
-            "performance": _fmt(perf_hits),
-        }
-
-        any_issues = any(hits for hits in (bug_hits, sec_hits, perf_hits))
-        summary = "Agents agree: issues likely present; request changes or reject." if any_issues else "Agents agree: PR appears clean; approve is reasonable."
-
-        return reports, summary
+        """Run sophisticated multi-agent analysis with BugAgent, SecurityAgent, PerformanceAgent."""
+        reports, debate_summary, severity_score = run_multi_agent_analysis(pr)
+        
+        # Store severity score in state for reward calculation (optional enhancement)
+        self._state.severity_score = severity_score
+        
+        return reports, debate_summary
 
     def _author_reply(self, pr: dict) -> str:
         """Generate a deterministic author response to request_changes."""

@@ -48,6 +48,7 @@ class ReviewState:
     steps_taken: int = 0
     review_decision: Optional[str] = None
     task_score: float = 0.0
+    severity_score: float = 0.0  # Agent-computed severity (0.0-1.0)
     max_steps: int = 5
 
     # ------------------------------------------------------------------ #
