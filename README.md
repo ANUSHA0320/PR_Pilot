@@ -54,6 +54,19 @@ so the agent must combine diff text, test results, lint results, and debate outp
 
 ---
 
+## Submission artifacts
+
+- Hugging Face blog: [HACKATHON_BLOG.md](HACKATHON_BLOG.md)
+- Training notebook: [training_trl_colab.ipynb](training_trl_colab.ipynb)
+- Training summary: [results/training_summary.txt](results/training_summary.txt)
+- Reward plot: [results/TrainingProgress_Reward.png](results/TrainingProgress_Reward.png)
+- Baseline plot: [results/TrainingAgent_RandomPolicy.png](results/TrainingAgent_RandomPolicy.png)
+
+The notebook includes imported Colab outputs, and the results folder keeps the
+saved plots and summary available for judges.
+
+---
+
 ## Project structure
 
 ```

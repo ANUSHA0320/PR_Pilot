@@ -1,7 +1,15 @@
-TRAINING SUMMARY
+PR PILOT - TRAINING RESULTS
 ============================================================
+
+Model: TRL+PPO (distilgpt2)
 Episodes: 100
-Average Reward: 0.052
-Std Dev: 0.513
-Range: [-0.300, 0.800]
-Final 5 episodes avg: 0.360
+Average Reward: 0.118
+Std Dev: 0.523
+Min Reward: -0.300
+Max Reward: 0.800
+Final 5 episodes avg: 0.155
+Improvement: -0.210
+
+============================================================
+
+Full TRL training completed successfully!

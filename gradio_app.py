@@ -58,17 +58,12 @@ def _format_agent_view(agent_reports: dict, debate_summary: str, author_reply: s
     perf = agent_reports.get("performance", "")
     summary = debate_summary or ""
     reply = author_reply or ""
-    if isinstance(history, list):
-        history_text = "\n".join(history)
-    else:
-        history_text = history or ""
     return (
         f"**BugAgent:** {bug}\n\n"
         f"**SecurityAgent:** {sec}\n\n"
         f"**PerformanceAgent:** {perf}\n\n"
         f"**Debate Summary:** {summary}\n\n"
-        f"**Author Reply:** {reply}\n\n"
-        f"**Conversation History:**\n{history_text}"
+        f"**Author Reply:** {reply}"
     )
 
 
