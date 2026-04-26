@@ -61,6 +61,7 @@ so the agent must combine diff text, test results, lint results, and debate outp
 - Training summary: [results/training_summary.txt](results/training_summary.txt)
 - Reward plot: [results/TrainingProgress_Reward.png](results/TrainingProgress_Reward.png)
 - Baseline plot: [results/TrainingAgent_RandomPolicy.png](results/TrainingAgent_RandomPolicy.png)
+- Live PR demo repo: https://github.com/ANUSHA0320/PR-Pilot-demo-.git
 
 The notebook includes imported Colab outputs, and the results folder keeps the
 saved plots and summary available for judges.

@@ -51,6 +51,13 @@ Latest saved summary:
 - Multi-PR navigation from a GitHub repo
 - Isolated browser sessions for concurrent use
 - Leaderboard-style episode tracking
+- Live PR demo is also available for judges to try the workflow end-to-end
+
+## Training repository
+
+The training and demo code used for this project is available here:
+
+- https://github.com/ANUSHA0320/PR-Pilot-demo-.git
 
 ## How the Colab results are imported
 
