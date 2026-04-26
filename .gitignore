@@ -64,6 +64,7 @@ checkpoints/
 models/
 runs/
 tensorboard_logs/
+CodeReviewEnv/
 
 # OS
 Desktop.ini
