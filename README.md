@@ -1,5 +1,5 @@
 ---
-title: CodeReviewEnv-v0
+title: PR Pilot
 sdk: docker
 pinned: false
 license: mit
@@ -11,15 +11,36 @@ tags:
   - benchmark
 ---
 
-# CodeReviewEnv-v0
+# PR Pilot
 
 Gymnasium-compatible reinforcement learning environment for automated pull-request code review.
 
 ---
 
+## Research framing
+
+PR Pilot targets a concrete capability gap: reliable, multi-step code review under partial information.
+The environment is designed to test whether an agent can:
+
+- inspect a diff and associated metadata,
+- coordinate specialist reviewers,
+- negotiate changes instead of making one-shot decisions,
+- and improve its decisions through training.
+
+This makes the project closer to a research benchmark than a simple demo, because the agent must reason over state, debate, and delayed feedback.
+
+Key research contributions:
+
+1. Multi-agent code-review simulation with specialist agents and debate.
+2. Reward shaping that rewards both intermediate review behavior and terminal decisions.
+3. Adaptive curriculum across easy, medium, and hard PRs.
+4. Colab training pipeline that produces reward evidence and baseline comparison.
+
+---
+
 ## Overview
 
-CodeReviewEnv-v0 simulates the workflow of a GitHub pull-request review.
+PR Pilot simulates the workflow of a GitHub pull-request review.
 Each episode presents the agent with a real-looking PR diff and metadata.
 The agent must decide how to respond — approve, reject, comment on a bug,
 suggest a patch, or request changes — and is scored on accuracy and quality.
@@ -28,12 +49,15 @@ Multi-agent review is supported: BugAgent, SecurityAgent, and PerformanceAgent
 analyze the PR, debate, and provide a summary before the LeadReviewer agent
 makes a final decision.
 
+The environment is intentionally structured as a partially observable review task,
+so the agent must combine diff text, test results, lint results, and debate output.
+
 ---
 
 ## Project structure
 
 ```
-CodeReviewEnv/
+PR-Pilot/
 ├── code_review_env/      ← Gymnasium environment (env.py, state.py, actions.py, reward.py)
 ├── tasks/                ← Evaluation logic (easy / medium / hard)
 ├── graders/              ← Deterministic graders (wrap tasks)
@@ -58,8 +82,8 @@ CodeReviewEnv/
 ### 1. Install
 
 ```bash
-git clone https://github.com/ANUSHA0320/CodeReviewEnv
-cd CodeReviewEnv
+git clone https://github.com/ANUSHA0320/PR_Pilot.git
+cd PR_Pilot
 pip install -r requirements.txt
 # or editable install:
 pip install -e .
@@ -278,6 +302,39 @@ Artifacts:
 - [Baseline comparison](results/TrainingAgent_RandomPolicy.png)
 - [Training summary](results/training_summary.txt)
 
+This is the main evidence that the agent improves during training.
+
+---
+
+## Story and presentation
+
+- GitHub repository: https://github.com/ANUSHA0320/PR_Pilot.git
+- Hugging Face Space: https://huggingface.co/spaces/anu1720/PR_Pilot
+- Google Slides: https://docs.google.com/presentation/d/1t8M1xrouFHtkEMYPHxooE1_zQ9b-NjjvNnqe77Wiilg/edit?slide=id.g3e64c8d2d4c_0_2246#slide=id.g3e64c8d2d4c_0_2246
+
+The presentation should explain the problem, the environment flow, and the training results in under two minutes.
+
+---
+
+## System overview
+
+```mermaid
+flowchart TD
+  A[GitHub PR diff] --> B[Gradio UI or Gym API]
+  B --> C[CodeReviewEnv]
+  C --> D[BugAgent]
+  C --> E[SecurityAgent]
+  C --> F[PerformanceAgent]
+  D --> G[Debate summary]
+  E --> G
+  F --> G
+  G --> H[LeadReviewer decision]
+  H --> I[Reward + task score]
+  I --> J[Training / evaluation]
+```
+
+The same flow is used in the Space, the notebook, and the baseline scripts.
+
 ---
 
 ## Continuous integration
@@ -311,10 +368,6 @@ for difficulty in ("easy", "medium", "hard"):
 
 This repo is configured for [Hugging Face Spaces](https://huggingface.co/spaces/anu1720/PR_Pilot) with `sdk: docker`.
 The Dockerfile builds and serves the Gradio UI on port 7860.
-
-```
-https://huggingface.co/spaces/anu1720/code-review-gym
-```
 
 To deploy your own fork:
 
